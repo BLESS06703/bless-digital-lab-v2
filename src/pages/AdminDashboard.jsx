@@ -33,6 +33,7 @@ import {
   YAxis,
 } from 'recharts'
 import { auth, db } from '../lib/firebase'
+import NotificationCenter from '../components/NotificationCenter'
 import './AdminDashboard.css'
 
 const OWNER_EMAIL = 'blessingskaunda36@gmail.com'
@@ -84,6 +85,7 @@ export default function AdminDashboard() {
   const [issuing, setIssuing] = useState(false)
   const [filter, setFilter] = useState('Pending review')
   const [search, setSearch] = useState('')
+  const [activeSection, setActiveSection] = useState('overview')
 
   useEffect(() => onAuthStateChanged(auth, currentUser => {
     setUser(currentUser)
@@ -139,6 +141,13 @@ export default function AdminDashboard() {
     return unsubscribe
   }, [user, authorized])
 
+  const notificationItems = useMemo(() => requests.map(request => ({
+    id: `admin-request-${request.id}-${request.status || 'updated'}`,
+    title: request.status === 'Pending review' ? 'Quote request awaiting review' : 'Quote request updated',
+    message: `${request.clientName || request.clientEmail || 'Client'} · ${request.service || 'Service'} — ${request.status || 'Updated'}`,
+    createdAt: request.updatedAt || request.createdAt,
+  })), [requests])
+
   const pendingCount = requests.filter(
     request => request.status === 'Pending review'
   ).length
@@ -187,6 +196,16 @@ export default function AdminDashboard() {
   const monthlyActivityData = useMemo(() => {
     const now = new Date()
 
+    const asDate = value => {
+      const date = value?.toDate
+        ? value.toDate()
+        : value
+          ? new Date(value)
+          : null
+
+      return date && !Number.isNaN(date.getTime()) ? date : null
+    }
+
     return Array.from({ length: 6 }, (_, index) => {
       const monthDate = new Date(
         now.getFullYear(),
@@ -197,28 +216,23 @@ export default function AdminDashboard() {
       const year = monthDate.getFullYear()
       const month = monthDate.getMonth()
 
-      const monthRequests = requests.filter(request => {
-        const value = request.createdAt
-        const date = value?.toDate
-          ? value.toDate()
-          : value
-            ? new Date(value)
-            : null
-
+      const inMonth = value => {
+        const date = asDate(value)
         return date &&
-          !Number.isNaN(date.getTime()) &&
           date.getFullYear() === year &&
           date.getMonth() === month
-      })
+      }
 
       return {
         month: monthDate.toLocaleDateString('en-GB', {
           month: 'short',
           year: '2-digit',
         }),
-        requests: monthRequests.length,
-        issued: monthRequests.filter(
-          request => request.status === 'Quote issued'
+        requests: requests.filter(request =>
+          inMonth(request.createdAt)
+        ).length,
+        issued: requests.filter(request =>
+          inMonth(request.quoteIssuedAt)
         ).length,
       }
     })
@@ -298,6 +312,7 @@ export default function AdminDashboard() {
 
       batch.update(selected.ref, {
         status: 'Quote issued',
+        quoteIssuedAt: serverTimestamp(),
       })
 
       await batch.commit()
@@ -353,18 +368,40 @@ export default function AdminDashboard() {
               <ShieldCheck size={13} /> Owner &amp; Administrator
             </span>
           </div>
+          <NotificationCenter key={user.uid} userKey={`admin-${user.uid}`} items={notificationItems} />
           <button className="admin-logout" onClick={handleSignOut}>
             <LogOut size={16} /> Sign out
           </button>
         </div>
       </header>
 
+      <nav className="admin-nav" aria-label="Administrator sections">
+        <button
+          type="button"
+          className={activeSection === 'overview' ? 'is-active' : ''}
+          aria-current={activeSection === 'overview' ? 'page' : undefined}
+          onClick={() => setActiveSection('overview')}
+        >
+          <ShieldCheck size={17} /> Overview
+        </button>
+        <button
+          type="button"
+          className={activeSection === 'quotations' ? 'is-active' : ''}
+          aria-current={activeSection === 'quotations' ? 'page' : undefined}
+          onClick={() => setActiveSection('quotations')}
+        >
+          <FileText size={17} /> Quotations
+        </button>
+      </nav>
+
       <main className="admin-main">
         <div className="admin-heading">
           <div>
             <span className="admin-eyebrow">OWNER WORKSPACE</span>
-            <h1>Quote management</h1>
-            <p>Review client requests and issue formal quotations.</p>
+            <h1>{activeSection === 'overview' ? 'Business overview' : 'Quote management'}</h1>
+            <p>{activeSection === 'overview'
+              ? 'Monitor quote requests and business activity.'
+              : 'Review client requests and issue formal quotations.'}</p>
           </div>
           <button
             className="admin-refresh"
@@ -374,6 +411,8 @@ export default function AdminDashboard() {
           </button>
         </div>
 
+        {activeSection === 'overview' && (
+          <>
         <div className="admin-stats">
           <article>
             <span><Clock3 size={18} /> Awaiting review</span>
@@ -531,12 +570,13 @@ export default function AdminDashboard() {
                 </ResponsiveContainer>
               </div>
               <p className="admin-chart-footnote">
-                Quote-issued counts reflect each request's current status,
-                grouped by its original submission month.
+                Quote-issued counts use the recorded quotation issuance date.
               </p>
             </article>
           </div>
         </section>
+          </>
+        )}
 
         {notice && (
           <div className="admin-notice" role="status">
@@ -548,6 +588,7 @@ export default function AdminDashboard() {
           <div className="admin-error" role="alert">{error}</div>
         )}
 
+        {activeSection === 'quotations' && (
         <section className="admin-workspace">
           <div className="admin-request-panel">
             <div className="admin-panel-heading">
@@ -732,6 +773,7 @@ export default function AdminDashboard() {
             )}
           </div>
         </section>
+        )}
       </main>
     </div>
   )

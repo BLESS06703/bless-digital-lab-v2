@@ -56,7 +56,7 @@ function Footer() {
           </a>
 
           <a
-            href="https://www.instagram.com/bless.kaundah0/"
+            href="https://www.instagram.com/bless.kaunda0/"
             target="_blank"
             rel="noreferrer"
           >

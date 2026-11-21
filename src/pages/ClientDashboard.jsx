@@ -9,6 +9,7 @@ import {
   Menu, Plus, RefreshCw, ShieldCheck, Wallet, X,
 } from 'lucide-react'
 import { auth, db } from '../lib/firebase'
+import NotificationCenter from '../components/NotificationCenter'
 import './ClientDashboard.css'
 
 const sections = [
@@ -142,6 +143,33 @@ export default function ClientDashboard() {
 
     return () => unsubscribers.forEach(unsubscribe => unsubscribe())
   }, [user])
+
+  const notificationItems = useMemo(() => [
+    ...quotes.map(item => ({
+      id: `quote-${item.id}-${item.status || 'updated'}`,
+      title: item.status === 'Accepted' ? 'Quote accepted' : item.status === 'Declined' ? 'Quote declined' : 'Quote update',
+      message: `${item.title || item.service || 'Your quote'} — ${item.status || 'Updated'}`,
+      createdAt: item.updatedAt || item.respondedAt || item.createdAt,
+    })),
+    ...requests.map(item => ({
+      id: `request-${item.id}-${item.status || 'updated'}`,
+      title: item.status === 'Quote issued' ? 'Quote issued' : 'Quote request update',
+      message: `${item.service || 'Service request'} — ${item.status || 'Updated'}`,
+      createdAt: item.updatedAt || item.createdAt,
+    })),
+    ...projects.map(item => ({
+      id: `project-${item.id}-${item.status || 'updated'}`,
+      title: 'Project update',
+      message: `${item.title || item.name || 'Your project'} — ${item.status || 'Updated'}`,
+      createdAt: item.updatedAt || item.createdAt,
+    })),
+    ...invoices.map(item => ({
+      id: `invoice-${item.id}-${item.status || 'updated'}`,
+      title: 'Invoice update',
+      message: `${item.title || item.invoiceNumber || 'Your invoice'} — ${item.status || 'Updated'}`,
+      createdAt: item.updatedAt || item.createdAt,
+    })),
+  ], [quotes, requests, projects, invoices])
 
   const totals = useMemo(() => ({
     active: projects.filter(p =>
@@ -390,6 +418,7 @@ export default function ClientDashboard() {
               </button>
             )}
           </label>
+          <NotificationCenter key={user.uid} userKey={user.uid} items={notificationItems} />
           <a className="client-public-link" href="/">View website <ArrowUpRight size={16} /></a>
         </header>
 

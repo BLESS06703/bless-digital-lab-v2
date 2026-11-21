@@ -9,7 +9,12 @@ import {
   signOut,
   reload,
 } from 'firebase/auth'
-import { auth } from '../lib/firebase'
+import { auth, db } from '../lib/firebase'
+import {
+  doc,
+  serverTimestamp,
+  setDoc,
+} from 'firebase/firestore'
 import {
   LockKeyhole,
   Mail,
@@ -124,6 +129,13 @@ export default function ClientAuth() {
 
         await updateProfile(credential.user, {
           displayName: name.trim(),
+        })
+
+        // Create the client's Firestore profile.
+        await setDoc(doc(db, 'users', credential.user.uid), {
+          displayName: name.trim(),
+          email: credential.user.email || cleanEmail,
+          createdAt: serverTimestamp(),
         })
 
         await sendEmailVerification(credential.user)
