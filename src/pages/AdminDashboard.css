@@ -1353,3 +1353,661 @@
     font-size: 12px;
   }
 }
+
+
+/* Admin V2 — Client Management */
+.admin-clients-section {
+  display: grid;
+  gap: 20px;
+  min-width: 0;
+}
+
+.admin-clients-toolbar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.admin-clients-toolbar h2 {
+  margin: 7px 0 5px;
+  color: #f3f4f6;
+  font-size: 21px;
+}
+
+.admin-clients-toolbar p,
+.admin-client-history-heading p {
+  margin: 0;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.admin-client-search {
+  display: grid;
+  gap: 7px;
+  width: min(320px, 100%);
+  color: #aeb7c5;
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.admin-client-search input {
+  width: 100%;
+  min-height: 43px;
+  padding: 0 13px;
+  border: 1px solid #303949;
+  border-radius: 9px;
+  outline: none;
+  background: #151b26;
+  color: #f3f4f6;
+  font: inherit;
+  font-size: 13px;
+}
+
+.admin-client-search input:focus {
+  border-color: #818cf8;
+  box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.12);
+}
+
+.admin-clients-layout {
+  display: grid;
+  grid-template-columns: minmax(260px, 0.85fr) minmax(0, 1.5fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.admin-client-directory,
+.admin-client-profile {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #29303d;
+  border-radius: 13px;
+  background: #111722;
+}
+
+.admin-client-directory-heading {
+  min-height: 51px;
+  padding: 0 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  border-bottom: 1px solid #29303d;
+}
+
+.admin-client-directory-heading strong {
+  color: #e5e7eb;
+  font-size: 13px;
+}
+
+.admin-client-directory-heading span {
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.admin-client-row {
+  width: 100%;
+  min-width: 0;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  text-align: left;
+  border: 0;
+  border-bottom: 1px solid #252d3a;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.admin-client-row:last-child {
+  border-bottom: 0;
+}
+
+.admin-client-row:hover,
+.admin-client-row.is-selected {
+  background: rgba(129, 140, 248, 0.09);
+}
+
+.admin-client-row.is-selected {
+  box-shadow: inset 3px 0 #818cf8;
+}
+
+.admin-client-avatar {
+  width: 39px;
+  height: 39px;
+  flex: 0 0 39px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: rgba(129, 140, 248, 0.15);
+  color: #c7d2fe;
+  font-size: 15px;
+  font-weight: 750;
+}
+
+.admin-client-row-content {
+  display: grid;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+
+.admin-client-row-content strong {
+  overflow-wrap: anywhere;
+  color: #f3f4f6;
+  font-size: 13px;
+}
+
+.admin-client-row-content small,
+.admin-client-row-content > span {
+  overflow-wrap: anywhere;
+  color: #9ca3af;
+  font-size: 11px;
+}
+
+.admin-client-row-date {
+  flex: 0 0 auto;
+  color: #9ca3af;
+  font-size: 10px;
+}
+
+.admin-client-profile {
+  padding: 18px;
+}
+
+.admin-client-profile-heading {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding-bottom: 17px;
+  border-bottom: 1px solid #29303d;
+}
+
+.admin-client-avatar-large {
+  width: 48px;
+  height: 48px;
+  flex-basis: 48px;
+  font-size: 18px;
+}
+
+.admin-client-profile-heading h2 {
+  margin: 5px 0;
+  color: #f3f4f6;
+  font-size: 18px;
+  overflow-wrap: anywhere;
+}
+
+.admin-client-profile-heading p {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #aeb7c5;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.admin-client-metrics {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 16px 0 22px;
+}
+
+.admin-client-metrics > div {
+  padding: 13px;
+  display: grid;
+  gap: 7px;
+  border: 1px solid #29303d;
+  border-radius: 10px;
+  background: #171f2c;
+}
+
+.admin-client-metrics span {
+  color: #9ca3af;
+  font-size: 11px;
+}
+
+.admin-client-metrics strong {
+  color: #f3f4f6;
+  font-size: 22px;
+}
+
+.admin-client-history-heading {
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: #a5b4fc;
+}
+
+.admin-client-history-heading h3 {
+  margin: 0 0 4px;
+  color: #f3f4f6;
+  font-size: 14px;
+}
+
+.admin-client-history {
+  display: grid;
+  gap: 10px;
+}
+
+.admin-client-history-card {
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid #29303d;
+  border-radius: 10px;
+  background: #171f2c;
+}
+
+.admin-client-history-top {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.admin-client-history-top > strong {
+  color: #f3f4f6;
+  font-size: 13px;
+  overflow-wrap: anywhere;
+}
+
+.admin-client-history-card > p {
+  margin: 9px 0;
+  color: #aeb7c5;
+  font-size: 12px;
+  line-height: 1.55;
+  overflow-wrap: anywhere;
+}
+
+.admin-client-history-meta {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+  color: #9ca3af;
+  font-size: 11px;
+}
+
+.admin-client-history-meta span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.admin-clients-empty {
+  min-height: 150px;
+  padding: 25px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+.admin-clients-empty h3 {
+  margin: 0;
+  color: #e5e7eb;
+  font-size: 15px;
+}
+
+.admin-clients-empty p {
+  max-width: 340px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.admin-client-prompt {
+  min-height: 280px;
+}
+
+@media (max-width: 760px) {
+  .admin-clients-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .admin-client-profile {
+    padding: 14px;
+  }
+
+  .admin-client-row-date {
+    display: none;
+  }
+}
+
+@media (max-width: 400px) {
+  .admin-client-history-top {
+    flex-direction: column;
+  }
+
+  .admin-client-metrics > div {
+    padding: 10px;
+  }
+}
+
+
+/* Client Management — dedicated profile view */
+.admin-clients-layout.has-selected-client {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.admin-clients-layout.has-selected-client .admin-client-directory {
+  display: none;
+}
+
+.admin-clients-layout.has-selected-client .admin-client-profile {
+  width: 100%;
+  min-height: 360px;
+}
+
+.admin-client-profile-heading {
+  position: relative;
+  flex-wrap: wrap;
+}
+
+.admin-client-back {
+  width: 100%;
+  min-height: 38px;
+  margin: 0 0 8px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  color: #a5b4fc;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+}
+
+.admin-client-back:hover {
+  color: #c7d2fe;
+}
+
+.admin-clients-layout.has-selected-client .admin-client-profile-heading {
+  align-items: center;
+}
+
+@media (max-width: 600px) {
+  .admin-clients-layout.has-selected-client .admin-client-profile {
+    min-height: 0;
+  }
+
+  .admin-client-back {
+    min-height: 42px;
+  }
+}
+
+
+/* Client profile — contact actions and activity summary */
+.admin-client-profile-heading {
+  gap: 12px;
+  padding-bottom: 19px;
+}
+
+.admin-client-contact {
+  margin-top: 5px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.admin-client-contact a {
+  min-width: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #aeb7c5;
+  text-decoration: none;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.admin-client-contact a:hover {
+  color: #c7d2fe;
+}
+
+.admin-client-contact button {
+  min-height: 31px;
+  padding: 0 9px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border: 1px solid #354052;
+  border-radius: 7px;
+  background: #1a2332;
+  color: #c7d2fe;
+  font: inherit;
+  font-size: 11px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.admin-client-contact button:hover {
+  background: #252f43;
+}
+
+.admin-client-no-email {
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.admin-client-metrics {
+  margin: 15px 0 16px;
+}
+
+.admin-client-metrics > div {
+  min-width: 0;
+  min-height: 83px;
+}
+
+.admin-client-latest-date {
+  font-size: 14px !important;
+  overflow-wrap: anywhere;
+}
+
+.admin-client-status-summary {
+  margin: 0 0 23px;
+  padding: 13px;
+  border: 1px solid #29303d;
+  border-radius: 10px;
+  background: rgba(23, 31, 44, 0.65);
+}
+
+.admin-client-status-summary > div {
+  margin-top: 11px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 11px;
+}
+
+.admin-client-status-summary > div > span {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #aeb7c5;
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.admin-client-status-summary strong {
+  min-width: 23px;
+  height: 23px;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+  background: #252f43;
+  color: #c7d2fe;
+  font-size: 11px;
+}
+
+@media (max-width: 400px) {
+  .admin-client-status-summary {
+    padding: 11px;
+  }
+
+  .admin-client-contact {
+    align-items: flex-start;
+  }
+
+  .admin-client-contact a {
+    max-width: 100%;
+  }
+}
+
+
+/* Client account status filters */
+.admin-client-status-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.admin-client-status-filters button {
+  min-height: 37px;
+  padding: 0 13px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid #303949;
+  border-radius: 9px;
+  background: #151b26;
+  color: #aeb7c5;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.admin-client-status-filters button:hover {
+  border-color: #818cf8;
+  color: #e5e7eb;
+}
+
+.admin-client-status-filters button.is-active {
+  border-color: #818cf8;
+  background: rgba(129, 140, 248, 0.13);
+  color: #c7d2fe;
+}
+
+.admin-client-status-filters button span {
+  min-width: 20px;
+  padding: 2px 5px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.07);
+  text-align: center;
+  font-size: 11px;
+}
+
+
+/* Client account management */
+.admin-client-account-management {
+  margin: 0 0 23px;
+  padding: 15px;
+  border: 1px solid #29303d;
+  border-radius: 10px;
+  background: rgba(23, 31, 44, 0.65);
+}
+
+.admin-client-account-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 13px;
+}
+
+.admin-client-account-heading h3 {
+  margin: 5px 0 0;
+  color: #f3f4f6;
+  font-size: 14px;
+}
+
+.admin-client-account-status {
+  padding: 5px 9px;
+  border: 1px solid #354052;
+  border-radius: 7px;
+  color: #cbd5e1;
+  background: #1a2332;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.admin-client-account-status.status-active {
+  color: #a6edc1;
+  border-color: #24563b;
+  background: #11251b;
+}
+
+.admin-client-account-status.status-archived {
+  color: #fcd38d;
+  border-color: #76552b;
+  background: #2a2115;
+}
+
+.admin-client-account-status.status-suspended {
+  color: #ffc0c0;
+  border-color: #713b40;
+  background: #29171a;
+}
+
+.admin-client-archive-details {
+  margin: 12px 0;
+  padding: 11px;
+  border-radius: 8px;
+  background: #151b26;
+}
+
+.admin-client-archive-details p {
+  margin: 5px 0;
+  color: #aeb7c5;
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.admin-client-archive-details strong {
+  color: #e5e7eb;
+}
+
+.admin-client-account-warning,
+.admin-client-account-security-note {
+  margin: 10px 0;
+  color: #aeb7c5;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.admin-client-account-warning {
+  color: #fcd38d;
+}
+
+.admin-client-account-action {
+  min-height: 38px;
+  padding: 0 13px;
+  border: 1px solid #354052;
+  border-radius: 8px;
+  background: #1a2332;
+  color: #9ca3af;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+.admin-client-account-security-note {
+  margin-bottom: 0;
+}

@@ -7,17 +7,23 @@ import {
   Timestamp,
   writeBatch,
   doc,
+  query,
+  where,
 } from 'firebase/firestore'
 import { onAuthStateChanged, signOut } from 'firebase/auth'
 import {
   ArrowLeft,
+  CalendarDays,
   CheckCircle2,
   Clock3,
+  Copy,
   FileText,
+  Mail,
   LogOut,
   RefreshCw,
   ShieldCheck,
   UserRound,
+  Users,
 } from 'lucide-react'
 import {
   Bar,
@@ -37,6 +43,7 @@ import NotificationCenter from '../components/NotificationCenter'
 import './AdminDashboard.css'
 
 const OWNER_EMAIL = 'blessingskaunda36@gmail.com'
+const ARCHIVE_ACTIONS_ENABLED = true
 
 const money = value =>
   new Intl.NumberFormat('en-MW', {
@@ -86,6 +93,18 @@ export default function AdminDashboard() {
   const [filter, setFilter] = useState('Pending review')
   const [search, setSearch] = useState('')
   const [activeSection, setActiveSection] = useState('overview')
+  const [clientSearch, setClientSearch] = useState('')
+  const [clientStatusFilter, setClientStatusFilter] = useState('Active')
+  const [selectedClientUid, setSelectedClientUid] = useState('')
+  const [copiedClientUid, setCopiedClientUid] = useState('')
+  const [clientProfiles, setClientProfiles] = useState({})
+  const [profileError, setProfileError] = useState('')
+
+  const [archiveReason, setArchiveReason] = useState('')
+  const [accountActionBusy, setAccountActionBusy] = useState(false)
+  const [archiveAuditLogs, setArchiveAuditLogs] = useState([])
+  const [archiveAuditError, setArchiveAuditError] = useState('')
+
 
   useEffect(() => onAuthStateChanged(auth, currentUser => {
     setUser(currentUser)
@@ -141,6 +160,72 @@ export default function AdminDashboard() {
     return unsubscribe
   }, [user, authorized])
 
+  // Load existing client profiles without changing any account data.
+  useEffect(() => {
+    if (!user || !authorized) return
+
+    const unsubscribe = onSnapshot(
+      collection(db, 'users'),
+      snapshot => {
+        const profiles = {}
+
+        snapshot.docs.forEach(profileDoc => {
+          profiles[profileDoc.id] = profileDoc.data()
+        })
+
+        setClientProfiles(profiles)
+        setProfileError('')
+      },
+      err => {
+        console.error('Client profile listener failed:', err)
+        setProfileError(
+          `Could not load client account statuses (${err.code || 'unknown'}).`
+        )
+      }
+    )
+
+    return unsubscribe
+  }, [user, authorized])
+
+  // Load immutable archive/restore audit history for the selected client.
+  useEffect(() => {
+    if (!user || !authorized || !selectedClientUid) {
+      return
+    }
+
+    const auditQuery = query(
+      collection(db, 'archiveAuditLogs'),
+      where('targetUid', '==', selectedClientUid)
+    )
+
+    const unsubscribe = onSnapshot(
+      auditQuery,
+      snapshot => {
+        const rows = snapshot.docs.map(auditDoc => ({
+          id: auditDoc.id,
+          ...auditDoc.data(),
+        }))
+
+        rows.sort((a, b) => {
+          const aTime = a.createdAt?.toMillis?.() || 0
+          const bTime = b.createdAt?.toMillis?.() || 0
+          return bTime - aTime
+        })
+
+        setArchiveAuditLogs(rows)
+        setArchiveAuditError('')
+      },
+      err => {
+        console.error('Archive audit listener failed:', err)
+        setArchiveAuditError(
+          `Could not load account audit history (${err.code || 'unknown'}).`
+        )
+      }
+    )
+
+    return unsubscribe
+  }, [user, authorized, selectedClientUid])
+
   const notificationItems = useMemo(() => requests.map(request => ({
     id: `admin-request-${request.id}-${request.status || 'updated'}`,
     title: request.status === 'Pending review' ? 'Quote request awaiting review' : 'Quote request updated',
@@ -174,6 +259,177 @@ export default function AdminDashboard() {
       return matchesStatus && matchesSearch
     })
   }, [requests, filter, search])
+
+  // Build a client directory from the existing live quote-request records.
+  const clients = useMemo(() => {
+    const grouped = new Map()
+
+    requests.forEach(request => {
+      if (!request.clientUid) return
+
+      if (!grouped.has(request.clientUid)) {
+        grouped.set(request.clientUid, {
+          uid: request.clientUid,
+          name: request.clientName || '',
+          email: request.clientEmail || '',
+          requests: [],
+        })
+      }
+
+      const client = grouped.get(request.clientUid)
+      client.requests.push(request)
+
+      if (!client.name && request.clientName) {
+        client.name = request.clientName
+      }
+
+      if (!client.email && request.clientEmail) {
+        client.email = request.clientEmail
+      }
+    })
+
+    return Array.from(grouped.values())
+      .map(client => ({
+        ...client,
+        profile: clientProfiles[client.uid] || null,
+        hasProfile: Boolean(clientProfiles[client.uid]),
+        accountStatus:
+          clientProfiles[client.uid]?.accountStatus || 'Active',
+        requests: client.requests.sort((a, b) => {
+          const aTime = a.createdAt?.toMillis?.() || 0
+          const bTime = b.createdAt?.toMillis?.() || 0
+          return bTime - aTime
+        }),
+      }))
+      .sort((a, b) => {
+        const aTime = a.requests[0]?.createdAt?.toMillis?.() || 0
+        const bTime = b.requests[0]?.createdAt?.toMillis?.() || 0
+        return bTime - aTime
+      })
+  }, [requests, clientProfiles])
+
+  const visibleClients = useMemo(() => {
+    const term = clientSearch.trim().toLowerCase()
+
+    return clients.filter(client => {
+      const matchesStatus = client.accountStatus === clientStatusFilter
+      const matchesSearch =
+        !term ||
+        [client.name, client.email].some(value =>
+          String(value || '').toLowerCase().includes(term)
+        )
+
+      return matchesStatus && matchesSearch
+    })
+  }, [clients, clientSearch, clientStatusFilter])
+
+  const selectedClient = clients.find(
+    client => client.uid === selectedClientUid
+  )
+
+  // Archive/restore profile changes and audit records are committed atomically.
+  const performAccountAction = async action => {
+    if (!ARCHIVE_ACTIONS_ENABLED) {
+      setNotice('Archive and restore are locked pending security-rule approval.')
+      return
+    }
+
+    if (!user || !authorized || !selectedClient?.hasProfile) {
+      setError('This client cannot be changed because a valid profile is unavailable.')
+      return
+    }
+
+    if (selectedClient.uid === user.uid) {
+      setError('You cannot archive or restore your own administrator account here.')
+      return
+    }
+
+    const expectedStatus = action === 'Archived' ? 'Active' : 'Archived'
+    const nextStatus = action === 'Archived' ? 'Archived' : 'Active'
+    const profile = clientProfiles[selectedClient.uid]
+
+    if (!profile || (profile.accountStatus || 'Active') !== expectedStatus) {
+      setError('The client account status has changed. Refresh and try again.')
+      return
+    }
+
+    const reason = archiveReason.trim()
+
+    if (reason.length > 500) {
+      setError('The reason must be 500 characters or fewer.')
+      return
+    }
+
+    const confirmation = action === 'Archived'
+      ? 'Archive this client account? Their existing data will be preserved.'
+      : 'Restore this client account to Active status?'
+
+    if (!window.confirm(confirmation)) return
+
+    setAccountActionBusy(true)
+    setError('')
+    setNotice('')
+
+    try {
+      const uid = selectedClient.uid
+      const profileRef = doc(db, 'users', uid)
+      const auditRef = doc(collection(db, 'archiveAuditLogs'))
+      const batch = writeBatch(db)
+      const timestamp = serverTimestamp()
+      const auditReason = reason || (
+        action === 'Archived' ? '' : 'Client restored'
+      )
+
+      const profileUpdate = {
+        accountStatus: nextStatus,
+        statusUpdatedAt: timestamp,
+        lastArchiveAuditId: auditRef.id,
+      }
+
+      if (action === 'Archived') {
+        Object.assign(profileUpdate, {
+          archivedAt: timestamp,
+          archivedBy: user.email,
+          archiveReason: reason,
+          restoredAt: null,
+        })
+      } else {
+        Object.assign(profileUpdate, {
+          archivedAt: null,
+          archivedBy: null,
+          archiveReason: null,
+          restoredAt: timestamp,
+        })
+      }
+
+      batch.update(profileRef, profileUpdate)
+
+      batch.set(auditRef, {
+        targetUid: uid,
+        targetEmail: profile.email || selectedClient.email || '',
+        action,
+        reason: auditReason,
+        performedBy: user.email,
+        createdAt: timestamp,
+      })
+
+      await batch.commit()
+
+      setArchiveReason('')
+      setNotice(
+        action === 'Archived'
+          ? 'Client archived successfully. Existing client data was preserved.'
+          : 'Client restored successfully.'
+      )
+    } catch (err) {
+      console.error(`Client ${action.toLowerCase()} failed:`, err)
+      setError(
+        `Could not ${action.toLowerCase()} this client (${err.code || 'unknown'}). Check permissions and try again.`
+      )
+    } finally {
+      setAccountActionBusy(false)
+    }
+  }
 
 
   const requestPipelineData = useMemo(() => {
@@ -392,16 +648,34 @@ export default function AdminDashboard() {
         >
           <FileText size={17} /> Quotations
         </button>
+        <button
+          type="button"
+          className={activeSection === 'clients' ? 'is-active' : ''}
+          aria-current={activeSection === 'clients' ? 'page' : undefined}
+          onClick={() => setActiveSection('clients')}
+        >
+          <Users size={17} /> Clients
+        </button>
       </nav>
 
       <main className="admin-main">
         <div className="admin-heading">
           <div>
             <span className="admin-eyebrow">OWNER WORKSPACE</span>
-            <h1>{activeSection === 'overview' ? 'Business overview' : 'Quote management'}</h1>
-            <p>{activeSection === 'overview'
-              ? 'Monitor quote requests and business activity.'
-              : 'Review client requests and issue formal quotations.'}</p>
+            <h1>
+              {activeSection === 'overview'
+                ? 'Business overview'
+                : activeSection === 'clients'
+                  ? 'Client management'
+                  : 'Quote management'}
+            </h1>
+            <p>
+              {activeSection === 'overview'
+                ? 'Monitor quote requests and business activity.'
+                : activeSection === 'clients'
+                  ? 'View clients and their service request history.'
+                  : 'Review client requests and issue formal quotations.'}
+            </p>
           </div>
           <button
             className="admin-refresh"
@@ -774,6 +1048,402 @@ export default function AdminDashboard() {
           </div>
         </section>
         )}
+
+        {activeSection === 'clients' && (
+          <section className="admin-clients-section">
+            {profileError && (
+              <div className="admin-error" role="alert">
+                {profileError}
+              </div>
+            )}
+            {!selectedClient && (
+              <div className="admin-clients-toolbar">
+                <div>
+                <span className="admin-eyebrow">CLIENT DIRECTORY</span>
+                <h2>{clients.length} {clients.length === 1 ? 'Client' : 'Clients'}</h2>
+                <p>Clients who have submitted at least one service request.</p>
+              </div>
+
+              <label className="admin-client-search">
+                <span>Search clients</span>
+                <input
+                  type="search"
+                  placeholder="Search name or email..."
+                  value={clientSearch}
+                  onChange={event => setClientSearch(event.target.value)}
+                />
+              </label>
+              </div>
+            )}
+
+            <div className="admin-client-status-filters" aria-label="Filter clients by account status">
+              {['Active', 'Archived', 'Suspended'].map(status => {
+                const count = clients.filter(
+                  client => client.accountStatus === status
+                ).length
+
+                return (
+                  <button
+                    type="button"
+                    key={status}
+                    className={clientStatusFilter === status ? 'is-active' : ''}
+                    aria-pressed={clientStatusFilter === status}
+                    onClick={() => {
+                      setClientStatusFilter(status)
+                      setSelectedClientUid('')
+                    }}
+                  >
+                    {status}
+                    <span>{count}</span>
+                  </button>
+                )
+              })}
+            </div>
+
+            {loading ? (
+              <div className="admin-clients-empty">Loading client records...</div>
+            ) : clients.length === 0 ? (
+              <div className="admin-clients-empty">
+                <Users size={28} />
+                <h3>No client records yet</h3>
+                <p>Client records will appear here after someone submits a service request.</p>
+              </div>
+            ) : (
+              <div className={`admin-clients-layout ${
+                selectedClient ? 'has-selected-client' : ''
+              }`}>
+                <div className="admin-client-directory">
+                  <div className="admin-client-directory-heading">
+                    <strong>Client list</strong>
+                    <span>{visibleClients.length} shown</span>
+                  </div>
+
+                  {visibleClients.length === 0 ? (
+                    <div className="admin-clients-empty">
+                      No clients match your search.
+                    </div>
+                  ) : (
+                    visibleClients.map(client => {
+                      const latest = client.requests[0]
+                      const pending = client.requests.filter(
+                        request => request.status === 'Pending review'
+                      ).length
+
+                      return (
+                        <button
+                          type="button"
+                          key={client.uid}
+                          className={`admin-client-row ${
+                            selectedClientUid === client.uid ? 'is-selected' : ''
+                          }`}
+                          onClick={() => {
+                            setSelectedClientUid(client.uid)
+                            setCopiedClientUid('')
+                          }}
+                        >
+                          <span className="admin-client-avatar">
+                            {(client.name || client.email || 'C')
+                              .trim()
+                              .charAt(0)
+                              .toUpperCase()}
+                          </span>
+
+                          <span className="admin-client-row-content">
+                            <strong>{client.name || 'Unnamed client'}</strong>
+                            <small>{client.email || 'No email provided'}</small>
+                            <span>
+                              {client.requests.length} request{client.requests.length === 1 ? '' : 's'}
+                              {pending > 0 ? ` · ${pending} awaiting review` : ''}
+                            </span>
+                          </span>
+
+                          <span className="admin-client-row-date">
+                            {formatDate(latest?.createdAt)}
+                          </span>
+                        </button>
+                      )
+                    })
+                  )}
+                </div>
+
+                <div className="admin-client-profile">
+                  {!selectedClient ? (
+                    <div className="admin-clients-empty admin-client-prompt">
+                      <Users size={30} />
+                      <h3>Select a client</h3>
+                      <p>Choose a client from the directory to view their request history.</p>
+                    </div>
+                  ) : (
+                    <>
+                      <div className="admin-client-profile-heading">
+                        <button
+                          type="button"
+                          className="admin-client-back"
+                          onClick={() => {
+                            setSelectedClientUid('')
+                            setCopiedClientUid('')
+                          }}
+                        >
+                          <ArrowLeft size={17} />
+                          <span>Back to clients</span>
+                        </button>
+                        <span className="admin-client-avatar admin-client-avatar-large">
+                          {(selectedClient.name || selectedClient.email || 'C')
+                            .trim()
+                            .charAt(0)
+                            .toUpperCase()}
+                        </span>
+                        <div>
+                          <span className="admin-eyebrow">CLIENT PROFILE</span>
+                          <h2>{selectedClient.name || 'Unnamed client'}</h2>
+                          <div className="admin-client-contact">
+                            {selectedClient.email ? (
+                              <>
+                                <a href={`mailto:${selectedClient.email}`}>
+                                  <Mail size={15} />
+                                  <span>{selectedClient.email}</span>
+                                </a>
+                                <button
+                                  type="button"
+                                  onClick={async () => {
+                                    try {
+                                      await navigator.clipboard.writeText(
+                                        selectedClient.email
+                                      )
+                                      setCopiedClientUid(selectedClient.uid)
+                                    } catch {
+                                      setError('Could not copy the email. Please copy it manually.')
+                                    }
+                                  }}
+                                  aria-label="Copy client email"
+                                >
+                                  {copiedClientUid === selectedClient.uid
+                                    ? <CheckCircle2 size={15} />
+                                    : <Copy size={15} />}
+                                  {copiedClientUid === selectedClient.uid
+                                    ? 'Copied'
+                                    : 'Copy email'}
+                                </button>
+                              </>
+                            ) : (
+                              <span className="admin-client-no-email">
+                                No email address provided
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="admin-client-metrics">
+                        <div>
+                          <span>Total requests</span>
+                          <strong>{selectedClient.requests.length}</strong>
+                        </div>
+                        <div>
+                          <span>Awaiting review</span>
+                          <strong>
+                            {selectedClient.requests.filter(
+                              request => request.status === 'Pending review'
+                            ).length}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>Quotes issued</span>
+                          <strong>
+                            {selectedClient.requests.filter(
+                              request => request.status === 'Quote issued'
+                            ).length}
+                          </strong>
+                        </div>
+                        <div>
+                          <span>Latest activity</span>
+                          <strong className="admin-client-latest-date">
+                            {formatDate(selectedClient.requests[0]?.createdAt)}
+                          </strong>
+                        </div>
+                      </div>
+
+                      <div className="admin-client-status-summary">
+                        <span className="admin-eyebrow">REQUEST STATUS</span>
+                        <div>
+                          {[
+                            'Pending review',
+                            'Quote issued',
+                            'Accepted',
+                            'Declined',
+                          ].map(status => {
+                            const count = selectedClient.requests.filter(
+                              request => request.status === status
+                            ).length
+
+                            return (
+                              <span key={status}>
+                                <strong>{count}</strong>
+                                {status}
+                              </span>
+                            )
+                          })}
+                        </div>
+                      </div>
+
+                      <section className="admin-client-account-management">
+                        <div className="admin-client-account-heading">
+                          <div>
+                            <span className="admin-eyebrow">ACCOUNT MANAGEMENT</span>
+                            <h3>Account status</h3>
+                          </div>
+                          <span className={`admin-client-account-status status-${selectedClient.accountStatus.toLowerCase()}`}>
+                            {selectedClient.accountStatus}
+                          </span>
+                        </div>
+
+                        {!selectedClient.hasProfile ? (
+                          <p className="admin-client-account-warning">
+                            This client has no existing account profile document.
+                            Account status changes are unavailable until a valid
+                            profile exists. No profile will be created automatically.
+                          </p>
+                        ) : (
+                          <>
+                            {selectedClient.accountStatus === 'Archived' && (
+                              <div className="admin-client-archive-details">
+                                <p>
+                                  <strong>Archived on:</strong>{' '}
+                                  {formatDate(selectedClient.profile?.archivedAt)}
+                                </p>
+                                <p>
+                                  <strong>Archived by:</strong>{' '}
+                                  {selectedClient.profile?.archivedBy || 'Not recorded'}
+                                </p>
+                                <p>
+                                  <strong>Reason:</strong>{' '}
+                                  {selectedClient.profile?.archiveReason || 'No reason provided'}
+                                </p>
+                              </div>
+                            )}
+
+                            {selectedClient.accountStatus === 'Suspended' && (
+                              <p className="admin-client-account-warning">
+                                This account is suspended. Archiving and restoration
+                                are unavailable while it remains suspended.
+                              </p>
+                            )}
+
+                            {selectedClient.accountStatus === 'Active' && (
+                              <>
+                                <label className="admin-client-reason-label" htmlFor="client-archive-reason">
+                                  Optional archive reason
+                                </label>
+                                <textarea
+                                  id="client-archive-reason"
+                                  className="admin-client-reason-input"
+                                  value={archiveReason}
+                                  onChange={event => setArchiveReason(event.target.value)}
+                                  maxLength={500}
+                                  rows={3}
+                                  placeholder="Explain why this client is being archived..."
+                                  disabled={!ARCHIVE_ACTIONS_ENABLED || accountActionBusy}
+                                />
+                                <button
+                                  type="button"
+                                  className="admin-client-account-action"
+                                  onClick={() => performAccountAction('Archived')}
+                                  disabled={!ARCHIVE_ACTIONS_ENABLED || accountActionBusy || selectedClient.uid === user?.uid}
+                                  title="Security rules must be approved and published before this action is enabled"
+                                >
+                                  {accountActionBusy ? 'Processing...' : 'Archive client'}
+                                </button>
+                              </>
+                            )}
+
+                            {selectedClient.accountStatus === 'Archived' && (
+                              <button
+                                type="button"
+                                className="admin-client-account-action"
+                                onClick={() => performAccountAction('Restored')}
+                                disabled={!ARCHIVE_ACTIONS_ENABLED || accountActionBusy || selectedClient.uid === user?.uid}
+                                title="Security rules must be approved and published before this action is enabled"
+                              >
+                                {accountActionBusy ? 'Processing...' : 'Restore client'}
+                              </button>
+                            )}
+                          </>
+                        )}
+
+                        <div className="admin-client-audit">
+                          <h4>Account activity history</h4>
+                          {archiveAuditError && (
+                            <p className="admin-client-account-warning" role="alert">
+                              {archiveAuditError}
+                            </p>
+                          )}
+                          {!archiveAuditError && archiveAuditLogs.length === 0 && (
+                            <p>No archive or restore events recorded.</p>
+                          )}
+                          {archiveAuditLogs.map(log => (
+                            <article key={log.id}>
+                              <strong>{log.action}</strong>
+                              <span>{formatDate(log.createdAt)}</span>
+                              <p>{log.reason || 'No reason provided'}</p>
+                              <small>
+                                By {log.performedBy || 'Unknown administrator'}
+                              </small>
+                            </article>
+                          ))}
+                        </div>
+
+                        <p className="admin-client-account-security-note">
+                          Archive and restore actions are locked until the
+                          administrator-only Firestore rules and audit logging
+                          are reviewed and authorized.
+                        </p>
+                      </section>
+
+                      <div className="admin-client-history-heading">
+                        <div>
+                          <h3>Request history</h3>
+                          <p>Most recent requests appear first.</p>
+                        </div>
+                        <CalendarDays size={19} />
+                      </div>
+
+                      <div className="admin-client-history">
+                        {selectedClient.requests.map(request => (
+                          <article
+                            className="admin-client-history-card"
+                            key={`${request.id}-${request.createdAt?.toMillis?.() || 0}`}
+                          >
+                            <div className="admin-client-history-top">
+                              <strong>{request.service || 'Service request'}</strong>
+                              <span className="admin-status">
+                                {request.status || 'Unknown status'}
+                              </span>
+                            </div>
+
+                            <p>{request.details || 'No additional requirements provided.'}</p>
+
+                            <div className="admin-client-history-meta">
+                              <span>
+                                <CalendarDays size={13} />
+                                {formatDate(request.createdAt)}
+                              </span>
+                              <span>
+                                Budget: {request.budget == null
+                                  ? 'Not specified'
+                                  : money(request.budget)}
+                              </span>
+                            </div>
+                          </article>
+                        ))}
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            )}
+          </section>
+        )}
+
       </main>
     </div>
   )
