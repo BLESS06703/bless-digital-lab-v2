@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Menu, X, ArrowUpRight } from 'lucide-react'
+import { Menu, X, ArrowUpRight, UserRound } from 'lucide-react'
 
 const links = [
   { label: 'About', href: '#about' },
@@ -29,7 +29,12 @@ function Navbar() {
           </a>
         ))}
 
-        <a className="nav-cta" href="#contact" onClick={closeMenu}>
+        <a className="nav-login" href="/signin" onClick={closeMenu}>
+          <UserRound size={16} />
+          Client Login
+        </a>
+
+        <a className="nav-cta" href="/signin" onClick={closeMenu}>
           Start a project
           <ArrowUpRight size={16} />
         </a>

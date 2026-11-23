@@ -28,8 +28,8 @@ function Hero() {
             <ArrowUpRight size={18} />
           </a>
 
-          <a className="button button-secondary" href="#contact">
-            Start a project
+          <a className="button button-secondary" href="/signin">
+            Request a quote
             <ArrowUpRight size={18} />
           </a>
         </div>

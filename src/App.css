@@ -65,6 +65,19 @@
   color: #fff;
 }
 
+.nav-login {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #ddd;
+  font-size: 12px;
+  transition: color 0.25s ease;
+}
+
+.nav-login:hover {
+  color: #fff;
+}
+
 .nav-cta {
   display: inline-flex;
   align-items: center;
