@@ -13,10 +13,10 @@ function Projects() {
       : projects.filter((project) => project.category === activeFilter)
 
   return (
-    <section className="section projects-section" id="work">
+    <section className="section projects-section premium-projects" id="work">
       <div className="section-heading">
         <span className="section-number">03</span>
-        <span className="section-label">Selected work</span>
+        <span className="section-label">Selected digital products</span>
       </div>
 
       <div className="projects-intro">
@@ -26,43 +26,55 @@ function Projects() {
             <span>solves problems.</span>
           </h2>
         </div>
-
         <p>
-          A selection of digital products, applications and experiences
-          developed around practical problems and real-world use cases.
+          Exploring practical digital solutions through software,
+          applications and modern web experiences.
         </p>
       </div>
 
-      <div className="project-filters">
+      <div className="project-filters" aria-label="Filter projects">
         {filters.map((filter) => (
           <button
             key={filter}
             type="button"
             className={activeFilter === filter ? 'active' : ''}
             onClick={() => setActiveFilter(filter)}
+            aria-pressed={activeFilter === filter}
           >
             {filter}
           </button>
         ))}
       </div>
 
-      <div className="projects-list">
+      <div className="premium-project-grid">
         {filteredProjects.map((project) => (
-          <article className="project-row" key={project.id}>
-            <div className="project-index">
-              {String(project.id).padStart(2, '0')}
-            </div>
+          <article className="premium-project-card" key={project.id}>
+            <div className="premium-project-visual">
+              <img
+                src={project.image}
+                alt={project.imageAlt}
+                loading="lazy"
+                decoding="async"
+              />
 
-            <div className="project-visual">
-              <div className="project-visual-grid" />
-              <span>{project.title.substring(0, 1)}</span>
-
-              <div className="project-visual-label">
+              <span className="premium-project-category">
                 {project.category}
-              </div>
+              </span>
+
+              <span className="premium-project-concept">
+                UI concept reference
+              </span>
             </div>
 
-            <div className="project-details">
+            <div className="premium-project-content">
+              <div className="premium-project-meta">
+                <span>{String(project.id).padStart(2, '0')}</span>
+                <span className="project-status">
+                  <span className="project-status-dot" />
+                  {project.status}
+                </span>
+              </div>
+
               <span className="project-type">{project.type}</span>
 
               <h3>{project.title}</h3>
@@ -74,22 +86,22 @@ function Projects() {
                   <span key={technology}>{technology}</span>
                 ))}
               </div>
-            </div>
 
-            <a
-              className="project-link"
-              href="#contact"
-              aria-label={`Discuss ${project.title}`}
-            >
-              <ArrowUpRight size={22} />
-            </a>
+              <a
+                className="premium-project-link"
+                href="#contact"
+                aria-label={`Discuss ${project.title}`}
+              >
+                Discuss this project
+                <ArrowUpRight size={18} />
+              </a>
+            </div>
           </article>
         ))}
       </div>
 
       <div className="projects-footer">
         <span>More projects coming</span>
-
         <a href="#contact">
           Have a project in mind?
           <ArrowUpRight size={17} />

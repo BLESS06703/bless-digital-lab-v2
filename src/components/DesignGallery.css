@@ -1,0 +1,316 @@
+.design-gallery-v2 {
+  background: #080808;
+}
+
+.design-gallery-v2 .section-heading {
+  max-width: 760px;
+  margin: 0 auto 48px;
+  text-align: center;
+}
+
+.design-gallery-v2 .section-heading h2 span {
+  color: var(--accent, #39e600);
+}
+
+.design-gallery-v2-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.design-gallery-v2-card {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 18px;
+  background: #101010;
+  transition: transform 220ms ease, border-color 220ms ease;
+}
+
+.design-gallery-v2-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(57, 230, 0, 0.48);
+}
+
+.design-gallery-v2-image-button {
+  position: relative;
+  display: flex;
+  width: 100%;
+  height: 390px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  background: radial-gradient(circle at 50% 35%, #242424, #050505 75%);
+  cursor: zoom-in;
+}
+
+.design-gallery-v2-image-button img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  transition: transform 350ms ease;
+}
+
+.design-gallery-v2-card:hover .design-gallery-v2-image-button img {
+  transform: scale(1.025);
+}
+
+.design-gallery-v2-view {
+  position: absolute;
+  right: 14px;
+  bottom: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 13px;
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 999px;
+  background: rgba(0,0,0,.78);
+  color: #fff;
+  font-size: .78rem;
+  opacity: 0;
+  transform: translateY(5px);
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.design-gallery-v2-card:hover .design-gallery-v2-view,
+.design-gallery-v2-image-button:focus-visible .design-gallery-v2-view {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.design-gallery-v2-meta {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 19px 18px;
+}
+
+.design-gallery-v2-number {
+  align-self: flex-start;
+  color: var(--accent, #39e600);
+  font-size: .76rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+}
+
+.design-gallery-v2-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.design-gallery-v2-copy h3 {
+  margin: 0 0 5px;
+  color: #fff;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.design-gallery-v2-copy p {
+  margin: 0;
+  color: #999;
+  font-size: .82rem;
+}
+
+.design-gallery-v2-open,
+.design-gallery-v2-close,
+.design-gallery-v2-prev,
+.design-gallery-v2-next {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255,255,255,.16);
+  background: rgba(255,255,255,.07);
+  color: #fff;
+  cursor: pointer;
+}
+
+.design-gallery-v2-open {
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  border-radius: 50%;
+}
+
+.design-gallery-v2-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-top: 42px;
+  text-align: center;
+}
+
+.design-gallery-v2-footer p {
+  margin: 0;
+  color: #c7c7c7;
+}
+
+.design-gallery-v2-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 19px;
+  border: 1px solid var(--accent, #39e600);
+  border-radius: 999px;
+  background: var(--accent, #39e600);
+  color: #050505;
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform 180ms ease, filter 180ms ease;
+}
+
+.design-gallery-v2-cta:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.08);
+}
+
+.design-gallery-v2-lightbox {
+  position: fixed;
+  z-index: 9999;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 22px;
+  background: rgba(0,0,0,.94);
+  backdrop-filter: blur(10px);
+}
+
+.design-gallery-v2-dialog {
+  position: relative;
+  display: flex;
+  width: min(100%, 1100px);
+  max-height: 94vh;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px;
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 18px;
+  background: #101010;
+}
+
+.design-gallery-v2-full-image {
+  display: block;
+  width: 100%;
+  height: min(70vh, 760px);
+  object-fit: contain;
+}
+
+.design-gallery-v2-close {
+  position: absolute;
+  z-index: 2;
+  top: 12px;
+  right: 12px;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(0,0,0,.8);
+}
+
+.design-gallery-v2-prev,
+.design-gallery-v2-next {
+  position: absolute;
+  z-index: 2;
+  top: 45%;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(0,0,0,.78);
+}
+
+.design-gallery-v2-prev { left: 12px; }
+.design-gallery-v2-next { right: 12px; }
+
+.design-gallery-v2-lightbox-caption {
+  display: flex;
+  width: 100%;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 15px 4px 2px;
+}
+
+.design-gallery-v2-lightbox-caption span {
+  color: var(--accent, #39e600);
+  font-size: .78rem;
+}
+
+.design-gallery-v2-lightbox-caption h3 {
+  margin: 5px 0;
+  color: #fff;
+}
+
+.design-gallery-v2-lightbox-caption p {
+  max-width: 680px;
+  margin: 0;
+  color: #aaa;
+  font-size: .88rem;
+  line-height: 1.5;
+}
+
+.design-gallery-v2-counter {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+  .design-gallery-v2-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .design-gallery-v2-image-button {
+    height: 350px;
+  }
+}
+
+@media (max-width: 600px) {
+  .design-gallery-v2 .section-heading {
+    margin-bottom: 30px;
+  }
+  .design-gallery-v2-grid {
+    grid-template-columns: 1fr;
+    gap: 18px;
+  }
+  .design-gallery-v2-image-button {
+    height: min(112vw, 470px);
+  }
+  .design-gallery-v2-view {
+    opacity: 1;
+    transform: none;
+  }
+  .design-gallery-v2-meta {
+    padding: 16px;
+  }
+  .design-gallery-v2-footer {
+    flex-direction: column;
+    margin-top: 30px;
+  }
+  .design-gallery-v2-lightbox {
+    padding: 8px;
+  }
+  .design-gallery-v2-dialog {
+    padding: 10px;
+  }
+  .design-gallery-v2-full-image {
+    height: 67vh;
+  }
+  .design-gallery-v2-lightbox-caption {
+    align-items: flex-start;
+  }
+  .design-gallery-v2-lightbox-caption p {
+    font-size: .8rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .design-gallery-v2-card,
+  .design-gallery-v2-image-button img,
+  .design-gallery-v2-view,
+  .design-gallery-v2-cta {
+    transition: none;
+  }
+}
